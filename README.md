@@ -20,7 +20,7 @@ The dataset is quite imbalanced - only about 15% of sessions actually end in a p
 
 ## c. GitHub Repository Link
 
-> **https://github.com/chndan-2025da04265/ml-assignment2-online-shoppers**
+> **https://github.com/chndan-2025da04265/ml-assignment2-online-shoppers-classification**
 
 ## d. Models Used
 
