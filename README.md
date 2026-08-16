@@ -49,9 +49,7 @@ The dataset is quite imbalanced - only about 15% of sessions actually end in a p
 
 ## e. Live Streamlit App
 
-> **https://<YOUR_APP>.streamlit.app**
->
-> _(update after deploying)_
+> **https://ml-assignment2-online-shoppers-classification-2025da04265.streamlit.app**
 
 ## How to Run
 
