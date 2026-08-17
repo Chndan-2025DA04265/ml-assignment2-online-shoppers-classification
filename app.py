@@ -135,6 +135,7 @@ with right:
     #drop the accuracy row, show it as a separate metric 
     overall_acc = report_df.loc['accuracy', 'precision']
     report_df = report_df.drop(index='accuracy')
+    report_df['support'] = report_df['support'].astype(int)
     st.write(f"Overall Accuracy: **{overall_acc:.4f}**")
     st.table(report_df[['precision', 'recall', 'f1-score', 'support']])
 
@@ -153,6 +154,7 @@ fig2, ax2 = plt.subplots(figsize=(10, 5))
 comp_df.plot(kind='bar', ax=ax2, rot=15)
 ax2.set_ylabel('Score')
 ax2.set_title('Model Comparison')
+ax2.legend(loc='upper left', bbox_to_anchor=(1,1))
 ax2.legend(loc='lower right')
 ax2.set_ylim(0.3, 1.05)
 plt.tight_layout()
