@@ -132,7 +132,11 @@ with right:
     st.subheader("Classification Report")
     report = classification_report(y, y_pred, target_names=target_names,output_dict=True)
     report_df = pd.DataFrame(report).transpose().round(3)
-    st.table(report_df)
+    #drop the accuracy row, show it as a separate metric 
+    overall_acc = report_df.loc['accuracy', 'precision']
+    report_df = report_df.drop(index='accuracy')
+    st.write(f"Overall Accuracy: **{overall_acc:.4f}**")
+    st.table(report_df[['precision', 'recall', 'f1-score', 'support']])
 
 st.write("---")
 
