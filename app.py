@@ -132,7 +132,7 @@ with right:
     st.subheader("Classification Report")
     report = classification_report(y, y_pred, target_names=target_names,output_dict=True)
     report_df = pd.DataFrame(report).transpose().round(3)
-    st.text(report_df)
+    st.table(report_df)
 
 st.write("---")
 
