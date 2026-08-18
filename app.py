@@ -7,7 +7,8 @@ import pickle
 import json
 from sklearn.metrics import (accuracy_score, roc_auc_score, precision_score,
                              recall_score, f1_score, matthews_corrcoef,
-                             confusion_matrix, classification_report)
+                             confusion_matrix, classification_report,
+                             roc_curve, precision_recall_curve, average_precision_score)
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -67,6 +68,10 @@ if 'Revenue' not in df.columns:
 st.sidebar.write("**Select Model**")
 chosen_model = st.sidebar.selectbox("Model:", list(model_files.keys()))
 
+# threshold tuning for class prediction
+st.sidebar.write("**Prediction Threshold**")
+threshold = st.sidebar.slider("Purchase cutoff probability", 0.10, 0.90, 0.50, 0.01)
+
 # show dataset info
 st.subheader("Dataset Preview")
 st.dataframe(df.head(10))
@@ -87,8 +92,8 @@ else:
     X_input = X.values
 
 # make predictions
-y_pred = model.predict(X_input)
 y_prob = model.predict_proba(X_input)[:, 1]
+y_pred = (y_prob >= threshold).astype(int)
 
 # calculate evaluation metrics
 acc = accuracy_score(y, y_pred)
@@ -101,6 +106,7 @@ mcc = matthews_corrcoef(y, y_pred)
 # display metrics
 st.write("---")
 st.subheader(f"Results for {chosen_model}")
+st.write(f"Using threshold: {threshold:.2f} (Purchase if probability >= {threshold:.2f})")
 
 col1, col2, col3 = st.columns(3)
 col4, col5, col6 = st.columns(3)
@@ -130,14 +136,47 @@ with left:
 
 with right:
     st.subheader("Classification Report")
-    report = classification_report(y, y_pred, target_names=target_names,output_dict=True)
+    report = classification_report(y, y_pred, target_names=target_names, output_dict=True)
     report_df = pd.DataFrame(report).transpose().round(3)
-    #drop the accuracy row, show it as a separate metric 
+    # drop the accuracy row (it shows same value in all columns, looks wrong)
+    # show it as a separate metric instead
     overall_acc = report_df.loc['accuracy', 'precision']
     report_df = report_df.drop(index='accuracy')
     report_df['support'] = report_df['support'].astype(int)
     st.write(f"Overall Accuracy: **{overall_acc:.4f}**")
     st.table(report_df[['precision', 'recall', 'f1-score', 'support']])
+
+st.write("---")
+
+# probability-based curves (independent of threshold)
+st.subheader("ROC and Precision-Recall Curves")
+curve_left, curve_right = st.columns(2)
+
+with curve_left:
+    fpr, tpr, _ = roc_curve(y, y_prob)
+    fig3, ax3 = plt.subplots(figsize=(5, 4))
+    ax3.plot(fpr, tpr, label=f"AUC = {auc:.4f}")
+    ax3.plot([0, 1], [0, 1], linestyle='--', color='gray')
+    ax3.set_xlabel('False Positive Rate')
+    ax3.set_ylabel('True Positive Rate')
+    ax3.set_title('ROC Curve')
+    ax3.legend(loc='lower right')
+    plt.tight_layout()
+    st.pyplot(fig3)
+
+with curve_right:
+    precision_curve, recall_curve, _ = precision_recall_curve(y, y_prob)
+    pr_auc = average_precision_score(y, y_prob)
+    fig4, ax4 = plt.subplots(figsize=(5, 4))
+    ax4.plot(recall_curve, precision_curve, label=f"AP = {pr_auc:.4f}")
+    ax4.set_xlabel('Recall')
+    ax4.set_ylabel('Precision')
+    ax4.set_title('Precision-Recall Curve')
+    ax4.legend(loc='lower left')
+    plt.tight_layout()
+    st.pyplot(fig4)
+
+st.write("AUC/ROC and PR curves use probabilities, while confusion matrix/report use the selected threshold.")
 
 st.write("---")
 
@@ -147,6 +186,7 @@ st.subheader("Comparison of All Models")
 # create comparison dataframe from saved metrics
 comp_df = pd.DataFrame(saved_metrics).T
 st.table(comp_df)
+st.write("This table is from training-time metrics saved in metrics.json (default threshold 0.50).")
 
 # bar chart
 st.subheader("Performance Chart")
@@ -154,7 +194,7 @@ fig2, ax2 = plt.subplots(figsize=(10, 5))
 comp_df.plot(kind='bar', ax=ax2, rot=15)
 ax2.set_ylabel('Score')
 ax2.set_title('Model Comparison')
-ax2.legend(loc='upper left', bbox_to_anchor=(1,1))
+ax2.legend(loc='upper left', bbox_to_anchor=(1, 1))
 ax2.set_ylim(0.3, 1.05)
 plt.tight_layout()
 st.pyplot(fig2)
